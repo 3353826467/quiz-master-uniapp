@@ -1,0 +1,25 @@
+{
+  "name": "quiz-master-uniapp",
+  "version": "1.0.0",
+  "description": "题库大师 - uni-app 版（网页端 / App / 微信小程序）",
+  "scripts": {
+    "dev:h5": "uni",
+    "dev:app": "uni -p app-plus",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:h5": "uni build",
+    "build:app": "uni build -p app-plus",
+    "build:mp-weixin": "uni build -p mp-weixin"
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/uni-app": "3.0.0-4020920240930001",
+    "@dcloudio/uni-app-plus": "3.0.0-4020920240930001",
+    "@dcloudio/uni-components": "3.0.0-4020920240930001",
+    "@dcloudio/uni-h5": "3.0.0-4020920240930001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-4020920240930001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-4020920240930001",
+    "vite": "5.2.8"
+  }
+}
