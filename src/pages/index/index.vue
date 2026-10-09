@@ -606,6 +606,52 @@
         </template>
       </view>
     </view>
+
+    <!-- ==================== 云同步 / 账户 ==================== -->
+    <view v-if="isCloudAvailable()" class="cloud-badge-wrap">
+      <view v-if="!auth.user" class="cloud-badge" @click="openLogin">
+        <text class="cloud-badge-text">登录同步</text>
+      </view>
+      <view v-else class="cloud-badge cloud-badge-user" @click="openAccount">
+        <text class="cloud-badge-text">{{ auth.user.email }}</text>
+        <text class="cloud-badge-dot" :class="sync.status">{{ syncStatusText }}</text>
+      </view>
+    </view>
+
+    <view v-if="auth.view !== 'closed'" class="cloud-modal-mask" @click.self="closeAuth">
+      <view class="cloud-modal">
+        <template v-if="auth.view === 'account'">
+          <view class="cloud-modal-title">账户</view>
+          <view class="cloud-account-email">{{ auth.user ? auth.user.email : '' }}</view>
+          <view class="cloud-sync-row">
+            <text>同步状态：</text>
+            <text class="cloud-sync-state" :class="sync.status">{{ syncStatusText }}</text>
+          </view>
+          <button class="btn-primary" @click="doSyncNow">立即同步</button>
+          <button class="btn-secondary cloud-logout" @click="doLogout">退出登录</button>
+        </template>
+        <template v-else>
+          <view class="cloud-modal-title">登录 / 注册</view>
+          <view v-if="auth.view !== 'forgot'" class="cloud-tabs">
+            <button class="cloud-tab" :class="{ active: auth.mode === 'password' }" @click="switchMode('password')">密码登录</button>
+            <button class="cloud-tab" :class="{ active: auth.mode === 'otp' }" @click="switchMode('otp')">验证码</button>
+          </view>
+          <input type="email" v-model="auth.email" class="form-input" placeholder="邮箱" />
+          <input v-if="auth.view !== 'forgot' && auth.mode === 'password'" type="password" v-model="auth.password" class="form-input" placeholder="密码" />
+          <input v-if="auth.view !== 'forgot' && auth.mode === 'otp' && auth.isRegister" type="password" v-model="auth.signupPassword" class="form-input" placeholder="设置密码（新账号）" />
+          <input v-if="auth.view !== 'forgot' && auth.mode === 'otp' && pendingCodeSent" type="text" v-model="auth.code" class="form-input" placeholder="邮箱验证码" />
+          <view v-if="auth.error" class="cloud-error">{{ auth.error }}</view>
+          <button class="btn-primary" :disabled="auth.loading" @click="onPrimaryAction">{{ primaryBtnText }}</button>
+          <view class="cloud-links">
+            <text v-if="auth.view !== 'forgot' && auth.mode === 'otp' && !auth.isRegister" @click="auth.isRegister = true">注册新账号</text>
+            <text v-if="auth.view !== 'forgot' && auth.mode === 'otp' && auth.isRegister" @click="auth.isRegister = false">已有账号？去登录</text>
+            <text v-if="auth.view !== 'forgot'" @click="auth.view = 'forgot'">忘记密码</text>
+            <text v-if="auth.view === 'forgot'" @click="auth.view = 'login'">返回登录</text>
+          </view>
+        </template>
+        <button class="cloud-modal-close" @click="closeAuth">关闭</button>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -618,6 +664,16 @@ import FileParser from '@/common/fileparser.js'
 import { chooseDocument, readTextContent, readArrayBuffer, readImageBase64, getPlatform } from '@/common/platform.js'
 import { toast, formatTime, shuffle, saveTextFile } from '@/common/format.js'
 import AppIcon from '@/components/AppIcon.vue'
+import {
+  isCloudAvailable,
+  getCurrentUser,
+  onAuthStateChange,
+  signInWithPassword,
+  sendEmailCode,
+  verifyEmailCode,
+  resetPasswordForEmail,
+  signOut
+} from '@/common/cloud.js'
 
 const TAB_VIEWS = ['home', 'favorites', 'error-book', 'stats', 'settings']
 
@@ -778,6 +834,161 @@ const stats = reactive({
   chartMax: 1,
   chartHasData: false
 })
+
+// ==================== 云端登录 / 同步 ====================
+const auth = reactive({
+  view: 'closed', // closed | login | account | forgot
+  mode: 'password', // password | otp
+  isRegister: false,
+  email: '',
+  password: '',
+  signupPassword: '',
+  code: '',
+  loading: false,
+  error: ''
+})
+const pendingCodeSent = ref(false)
+const sync = reactive({ status: 'idle', message: '' }) // idle | syncing | synced | error | local
+
+const syncStatusText = computed(() => {
+  if (sync.status === 'syncing') return '同步中…'
+  if (sync.status === 'synced') return '已同步'
+  if (sync.status === 'error') return '同步失败'
+  if (sync.status === 'local') return '仅本地'
+  return '未同步'
+})
+const primaryBtnText = computed(() => {
+  if (auth.view === 'forgot') return '发送重置邮件'
+  if (auth.loading) return '处理中…'
+  if (auth.mode === 'password') return '登录'
+  if (auth.mode === 'otp' && !pendingCodeSent.value) return '获取验证码'
+  if (auth.mode === 'otp' && pendingCodeSent.value) return '验证并登录/注册'
+  return '确定'
+})
+
+function openLogin() {
+  auth.view = 'login'
+  auth.error = ''
+}
+function openAccount() {
+  auth.view = 'account'
+}
+function closeAuth() {
+  if (auth.loading) return
+  auth.view = 'closed'
+  auth.error = ''
+}
+function switchMode(m) {
+  auth.mode = m
+  auth.error = ''
+  pendingCodeSent.value = false
+}
+async function doPasswordLogin() {
+  if (!auth.email || !auth.password) { auth.error = '请输入邮箱和密码'; return }
+  auth.loading = true
+  auth.error = ''
+  const { data, error } = await signInWithPassword(auth.email.trim(), auth.password)
+  auth.loading = false
+  if (error) { auth.error = error.message || '登录失败'; return }
+  await onLoginSuccess(data.user)
+}
+async function doSendCode() {
+  if (!auth.email) { auth.error = '请输入邮箱'; return }
+  auth.loading = true
+  auth.error = ''
+  const sent = await sendEmailCode(auth.email.trim())
+  auth.loading = false
+  if (sent.error) { auth.error = sent.error.message || '发送失败'; return }
+  pendingCodeSent.value = true
+  toast('验证码已发送到邮箱')
+}
+async function doVerifyCode() {
+  if (!auth.code) { auth.error = '请输入验证码'; return }
+  auth.loading = true
+  auth.error = ''
+  const pwd = auth.isRegister && auth.mode === 'otp' ? auth.signupPassword : undefined
+  const completed = await verifyEmailCode(auth.email.trim(), auth.code.trim(), pwd)
+  auth.loading = false
+  if (completed.error) { auth.error = completed.error.message || '验证失败'; return }
+  await onLoginSuccess(completed.data.user)
+}
+async function doForgot() {
+  if (!auth.email) { auth.error = '请输入邮箱'; return }
+  auth.loading = true
+  auth.error = ''
+  const res = await resetPasswordForEmail(auth.email.trim())
+  auth.loading = false
+  if (res.error) { auth.error = res.error.message || '请求失败'; return }
+  toast('密码重置邮件已发送，请查收')
+  auth.view = 'login'
+  auth.isRegister = false
+}
+async function onLoginSuccess(user) {
+  auth.user = user
+  auth.view = 'closed'
+  auth.error = ''
+  pendingCodeSent.value = false
+  Storage.setCloudSync(true)
+  sync.status = 'syncing'
+  const r = await Storage.pullFromCloud()
+  if (r.ok) {
+    sync.status = 'synced'
+    refreshAll()
+  } else {
+    sync.status = 'error'
+    sync.message = r.error || '同步失败'
+  }
+}
+async function doSyncNow() {
+  if (!auth.user) { openLogin(); return }
+  sync.status = 'syncing'
+  const r = await Storage.pullFromCloud()
+  if (r.ok) { sync.status = 'synced'; refreshAll() }
+  else { sync.status = 'error' }
+}
+async function doLogout() {
+  auth.loading = true
+  await signOut()
+  auth.loading = false
+  auth.user = null
+  Storage.setCloudSync(false)
+  sync.status = 'local'
+  auth.view = 'closed'
+  toast('已退出登录')
+}
+function onPrimaryAction() {
+  if (auth.view === 'forgot') { doForgot(); return }
+  if (auth.mode === 'password') doPasswordLogin()
+  else if (auth.mode === 'otp' && !pendingCodeSent.value) doSendCode()
+  else if (auth.mode === 'otp' && pendingCodeSent.value) doVerifyCode()
+}
+async function initAuth() {
+  if (!isCloudAvailable()) { sync.status = 'local'; return }
+  const user = await getCurrentUser()
+  if (user) {
+    auth.user = user
+    Storage.setCloudSync(true)
+    sync.status = 'syncing'
+    const r = await Storage.pullFromCloud()
+    sync.status = r.ok ? 'synced' : 'error'
+    refreshAll()
+  } else {
+    sync.status = 'local'
+  }
+  onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') {
+      auth.user = null
+      Storage.setCloudSync(false)
+      sync.status = 'local'
+    }
+  })
+}
+function refreshAll() {
+  refreshHome()
+  refreshFavorites()
+  refreshErrorBook()
+  refreshStats()
+}
 
 // ==================== 导航 ====================
 function navigate(viewName) {
@@ -2080,6 +2291,7 @@ function init() {
 
 onMounted(() => {
   init()
+  initAuth()
 })
 
 // 暴露给模板

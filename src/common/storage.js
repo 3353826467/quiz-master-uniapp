@@ -3,6 +3,8 @@
  * 基于 uni.setStorageSync / uni.getStorageSync 的持久化存储（跨端通用）
  */
 
+import { isCloudAvailable, syncUp, syncDown } from './cloud.js'
+
 const Storage = (function () {
   const DB_KEY = 'quiz_master_db'
 
@@ -261,6 +263,12 @@ const Storage = (function () {
   function saveDB(database) {
     try {
       uni.setStorageSync(DB_KEY, JSON.stringify(database))
+      if (cloudSyncEnabled) {
+        // 异步同步到云端，不阻塞本地保存
+        syncUp(database).catch(function (e) {
+          console.error('[cloud] syncUp failed', e)
+        })
+      }
       return true
     } catch (e) {
       console.error('Failed to save DB:', e)
@@ -269,6 +277,7 @@ const Storage = (function () {
   }
 
   let db = loadDB()
+  let cloudSyncEnabled = false
 
   // ==================== 题库管理 ====================
 
@@ -765,6 +774,31 @@ const Storage = (function () {
     saveDB(db)
   }
 
+  // ==================== 云端同步 ====================
+
+  function setCloudSync(enabled) {
+    cloudSyncEnabled = !!enabled && isCloudAvailable()
+  }
+
+  function isCloudSyncEnabled() {
+    return cloudSyncEnabled
+  }
+
+  // 登录后从云端拉取整库；云端无数据时把本地首次上传
+  async function pullFromCloud() {
+    if (!isCloudAvailable()) return { ok: false, error: '云端不可用' }
+    const result = await syncDown()
+    if (!result.ok) return result
+    if (result.data) {
+      db = normalizeDB(result.data)
+      saveDB(db)
+    } else {
+      const up = await syncUp(db)
+      if (!up.ok) return up
+    }
+    return { ok: true }
+  }
+
   // ==================== 工具方法 ====================
 
   function getQuestionTypeName(type) {
@@ -822,6 +856,9 @@ const Storage = (function () {
     importBankPackage,
     importData,
     clearAllData,
+    setCloudSync,
+    isCloudSyncEnabled,
+    pullFromCloud,
     getQuestionTypeName,
     uuid
   }
