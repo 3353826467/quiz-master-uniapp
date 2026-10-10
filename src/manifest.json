@@ -29,13 +29,21 @@
   },
   "quickapp": {},
   "mp-weixin": {
-    "appid": "wx690b3f1b4308cd3c",
+    "appid": "wx7513569c1a5c3e84",
     "setting": {
       "urlCheck": false,
       "es6": true,
       "minified": true
     },
-    "usingComponents": true
+    "usingComponents": true,
+    "packOptions": {
+      "ignore": [
+        {
+          "type": "folder",
+          "value": "static/libs"
+        }
+      ]
+    }
   },
   "h5": {
     "router": {
