@@ -1,12 +1,31 @@
 /* ==================== 基础重置 ==================== */
+/* #ifdef H5 */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
+/* #endif */
+/* #ifndef H5 */
+page,
+view,
+text,
+image,
+button,
+input,
+textarea,
+scroll-view,
+swiper,
+swiper-item,
+navigator,
+form {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+/* #endif */
 
-:root,
 page {
   --primary: #6366f1;
   --primary-dark: #4f46e5;
@@ -2095,7 +2114,6 @@ page {
 
 /* ==================== 响应式 ==================== */
 @media (min-width: 600px) {
-  :root,
   page {
     font-size: 16px;
   }
