@@ -551,6 +551,11 @@
       </view>
     </view>
 
+    <!-- ==================== AI 答疑 ==================== -->
+    <view v-show="state.currentView === 'ai-tutor'" class="view">
+      <AiTutor />
+    </view>
+
     <!-- ==================== 底部导航 ==================== -->
     <view v-show="showNav" class="bottom-nav">
       <button class="nav-item" :class="{ active: state.currentView === 'home' }" @click="navigate('home')">
@@ -568,6 +573,10 @@
       <button class="nav-item" :class="{ active: state.currentView === 'stats' }" @click="navigate('stats')">
         <app-icon name="i34"></app-icon>
         <span>统计</span>
+      </button>
+      <button class="nav-item" :class="{ active: state.currentView === 'ai-tutor' }" @click="navigate('ai-tutor')">
+        <app-icon name="i37"></app-icon>
+        <span>AI答疑</span>
       </button>
       <button class="nav-item" :class="{ active: state.currentView === 'settings' }" @click="navigate('settings')">
         <app-icon name="i35"></app-icon>
@@ -664,6 +673,7 @@ import FileParser from '@/common/fileparser.js'
 import { chooseDocument, readTextContent, readArrayBuffer, readImageBase64, getPlatform } from '@/common/platform.js'
 import { toast, formatTime, shuffle, saveTextFile } from '@/common/format.js'
 import AppIcon from '@/components/AppIcon.vue'
+import AiTutor from '@/components/AiTutor.vue'
 import {
   isCloudAvailable,
   getCurrentUser,
@@ -675,7 +685,7 @@ import {
   signOut
 } from '@/common/cloud.js'
 
-const TAB_VIEWS = ['home', 'favorites', 'error-book', 'stats', 'settings']
+const TAB_VIEWS = ['home', 'favorites', 'error-book', 'stats', 'ai-tutor', 'settings']
 
 // 当前是否运行在微信小程序端（用于条件渲染：SVG 图标在小程序端降级为 emoji）
 const isMp = ref(getPlatform() === 'mp-weixin')

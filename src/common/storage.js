@@ -30,6 +30,7 @@ const Storage = (function () {
       banks: [],
       errorBook: [],
       practiceSessions: {},
+      aiChats: [],
       stats: getDefaultStats(),
       settings: {
         studyShuffle: true,
@@ -155,12 +156,78 @@ const Storage = (function () {
     return normalized
   }
 
+  // ===== AI 答疑记录（随整库一起多端同步）=====
+  function normalizeAiChat(chat) {
+    return {
+      id: chat && chat.id ? chat.id : uuid(),
+      question: String((chat && chat.question) || '').slice(0, 4000),
+      answer: String((chat && chat.answer) || '').slice(0, 20000),
+      attachments: Array.isArray(chat && chat.attachments)
+        ? chat.attachments.slice(0, 9).map(function (item) {
+            return {
+              type: item && item.type === 'image' ? 'image' : 'doc',
+              name: String((item && item.name) || '附件').slice(0, 120)
+            }
+          })
+        : [],
+      model: String((chat && chat.model) || '').slice(0, 60),
+      createdAt: Number(chat && chat.createdAt) || Date.now()
+    }
+  }
+
+  function normalizeAiChats(list) {
+    if (!Array.isArray(list)) return []
+    return list
+      .map(normalizeAiChat)
+      .sort(function (a, b) {
+        return b.createdAt - a.createdAt
+      })
+      .slice(0, 100)
+  }
+
+  function getAiChats() {
+    return db.aiChats.slice()
+  }
+
+  function getAiChat(id) {
+    return (
+      db.aiChats.find(function (c) {
+        return c.id === id
+      }) || null
+    )
+  }
+
+  function saveAiChat(chat) {
+    const record = normalizeAiChat(Object.assign({}, chat))
+    const index = db.aiChats.findIndex(function (c) {
+      return c.id === record.id
+    })
+    if (index >= 0) db.aiChats[index] = record
+    else db.aiChats.unshift(record)
+    db.aiChats = normalizeAiChats(db.aiChats)
+    saveDB(db)
+    return record
+  }
+
+  function deleteAiChat(id) {
+    db.aiChats = db.aiChats.filter(function (c) {
+      return c.id !== id
+    })
+    saveDB(db)
+  }
+
+  function clearAiChats() {
+    db.aiChats = []
+    saveDB(db)
+  }
+
   function normalizeDB(raw) {
     const defaults = getDefaultDB()
     return {
       banks: Array.isArray(raw && raw.banks) ? raw.banks.map(normalizeBank) : [],
       errorBook: normalizeErrorBook(raw && raw.errorBook),
       practiceSessions: normalizePracticeSessions(raw && raw.practiceSessions),
+      aiChats: normalizeAiChats(raw && raw.aiChats),
       stats: normalizeStats(raw && raw.stats),
       settings: Object.assign({}, defaults.settings, (raw && raw.settings) || {}),
       version: raw && raw.version ? raw.version : defaults.version
@@ -859,6 +926,11 @@ const Storage = (function () {
     setCloudSync,
     isCloudSyncEnabled,
     pullFromCloud,
+    getAiChats,
+    getAiChat,
+    saveAiChat,
+    deleteAiChat,
+    clearAiChats,
     getQuestionTypeName,
     uuid
   }
