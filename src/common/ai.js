@@ -1,6 +1,8 @@
-// ai.js - AI 调用层（OpenAI 兼容接口），fetch 改为 uni.request 以跨端运行
+// ai.js - AI 调用层
+// 请求统一发往自建后端（/api/ai/chat），由服务端注入 API Key 后转发给大模型。
+// 前端不再持有任何密钥。
 import Storage from './storage.js'
-import { resolveAiConfig } from './aiConfig.js'
+import { getAiUrl, AI_ENDPOINTS } from './aiConfig.js'
 
 const AiService = (function () {
   function getSettings() {
@@ -8,13 +10,12 @@ const AiService = (function () {
   }
 
   function isConfigured() {
-    const settings = getSettings()
-    const cfg = resolveAiConfig(settings)
-    return !!(settings.aiEnabled && cfg.apiKey && cfg.baseUrl && cfg.model)
+    // 密钥在服务端，前端只需判断用户是否开启 AI
+    return !!getSettings().aiEnabled
   }
 
   function getEndpoint() {
-    return resolveAiConfig(getSettings()).baseUrl.replace(/\/$/, '') + '/chat/completions'
+    return getAiUrl(AI_ENDPOINTS.chat)
   }
 
   function uniRequest(options) {
@@ -35,11 +36,8 @@ const AiService = (function () {
     const settings = getSettings()
     if (!settings.aiEnabled) throw new Error('请先在设置中开启 AI 功能')
 
-    // 未填写的配置自动使用内置服务，保证打开即用
-    const cfg = resolveAiConfig(settings)
-
+    // 模型与密钥由服务端决定，前端只传消息与参数
     const body = {
-      model: cfg.model,
       temperature: options && typeof options.temperature === 'number' ? options.temperature : 0.2,
       messages
     }
@@ -49,15 +47,12 @@ const AiService = (function () {
       response = await uniRequest({
         url: getEndpoint(),
         method: 'POST',
-        header: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + cfg.apiKey
-        },
+        header: { 'Content-Type': 'application/json' },
         data: body
       })
     } catch (error) {
       const reason = error && error.errMsg ? error.errMsg : '网络请求失败'
-      throw new Error('AI 网络请求失败，请检查当前网络、AI 接口额度，或重新编译安卓应用后再试：' + reason)
+      throw new Error('AI 网络请求失败，请检查当前网络或稍后重试：' + reason)
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -333,9 +328,7 @@ const AiService = (function () {
 
     const settings = getSettings()
     if (!settings.aiEnabled) throw new Error('请先在设置中开启 AI 功能')
-    const cfg = resolveAiConfig(settings)
     const body = {
-      model: cfg.model,
       temperature: 0.1,
       messages: [
         { role: 'system', content: '你是 OCR 题库识别助手。' },
@@ -354,10 +347,7 @@ const AiService = (function () {
       response = await uniRequest({
         url: getEndpoint(),
         method: 'POST',
-        header: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + cfg.apiKey
-        },
+        header: { 'Content-Type': 'application/json' },
         data: body
       })
     } catch (error) {

@@ -5,6 +5,9 @@ node_modules/
 dist/
 unpackage/
 
+# 服务端密钥（AI API Key 只保存在服务端 .env，不进前端产物）
+server/.env
+
 # HBuilderX
 .hbuilderx/
 

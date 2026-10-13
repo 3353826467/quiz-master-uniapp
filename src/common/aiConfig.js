@@ -1,23 +1,40 @@
-// aiConfig.js - 内置 AI 服务配置
-// 说明：应用内置一套可用的 OpenAI 兼容接口，用户无需手动填写 Base URL / API Key / 模型，
-// 打开即可使用 AI 功能（题目解析、主观题判分、图片 OCR、AI 答疑）。
-// 若用户在「设置 → AI 设置」中自行填写了配置，则优先使用用户配置。
+// aiConfig.js - AI 后端代理配置
+//
+// 安全设计：前端不保存任何 API Key，所有 AI 请求都发给自己的后端，
+// 由服务端注入 Authorization 后转发给大模型厂商。
+// 服务端密钥配置见 server/.env（复制 server/.env.example 后修改即可开箱使用）。
 
-export const BUILTIN_AI = {
-  baseUrl: 'https://api.deepseek.com',
-  apiKey: 'sk-b9722d361a284ced9e04b3e1db48ef3e',
-  model: 'deepseek-flash'
+// 各端使用的后端地址
+//   H5      ：同源相对路径（静态页面与接口由同一个服务提供）
+//   App     ：线上后端域名（真机无法访问 localhost）
+//   小程序  ：线上后端域名（需在 mp 后台配置 request 合法域名）
+const BACKEND_BY_PLATFORM = {
+  h5: '',
+  app: 'https://quizmaster-h5.app.workbuddy.host',
+  'mp-weixin': 'https://quizmaster-h5.app.workbuddy.host'
 }
 
-// 把用户设置与内置配置合并：空白字段回落内置值
-export function resolveAiConfig(settings) {
-  const s = settings || {}
-  const pick = (value, fallback) =>
-    typeof value === 'string' && value.trim() ? value.trim() : fallback
+function currentPlatform() {
+  // #ifdef H5
+  return 'h5'
+  // #endif
+  // #ifdef APP-PLUS
+  return 'app'
+  // #endif
+  // #ifdef MP-WEIXIN
+  return 'mp-weixin'
+  // #endif
+  return 'h5'
+}
 
-  return {
-    baseUrl: pick(s.aiBaseUrl, BUILTIN_AI.baseUrl),
-    apiKey: pick(s.aiApiKey, BUILTIN_AI.apiKey),
-    model: pick(s.aiModel, BUILTIN_AI.model)
-  }
+export const AI_BACKEND = BACKEND_BY_PLATFORM[currentPlatform()] || ''
+
+// AI 接口（相对后端地址）
+export const AI_ENDPOINTS = {
+  chat: '/api/ai/chat',
+  health: '/api/ai/health'
+}
+
+export function getAiUrl(path) {
+  return AI_BACKEND + path
 }

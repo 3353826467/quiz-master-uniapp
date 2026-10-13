@@ -137,27 +137,51 @@ npm run build:mp-weixin # 产物：dist/build/mp-weixin/ → 微信开发者工�
 
 ---
 
-## 6. AI 功能
+## 6. AI 功能（后端代理 · 密钥不进前端产物）
 
-### 内置 AI 服务（开箱即用）
+调用链路：**前端 → 自建后端 `/api/ai/chat` → 大模型厂商**。
+API Key 只保存在服务端 `server/.env`，前端产物 `public/` 中不含任何密钥。
 
-应用已内置一套 OpenAI 兼容的 AI 服务，配置在 `src/common/aiConfig.js`：
+### 6.1 服务端配置
 
-| 项 | 值 |
+配置文件：`server/.env`（复制 `server/.env.example` 即可开箱使用）
+
+| 变量 | 默认值 |
 |---|---|
-| Base URL | `https://api.deepseek.com` |
-| Model | `deepseek-flash`（DeepSeek-V4.1-Flash，支持文本 + 图片输入，上下文 1M） |
-| API Key | 内置于 `aiConfig.js` |
+| `OPENAI_BASE_URL` | `https://api.deepseek.com` |
+| `OPENAI_API_KEY` | 内置 DeepSeek Key |
+| `LLM_MODEL` | `deepseek-flash`（支持文本 + 图片，上下文 1M） |
+| `LLM_MAX_TOKENS` | `4096`（推理模型会额外消耗 reasoning tokens） |
+| `LLM_TIMEOUT` | `90` 秒 |
+| `PORT` | `8000` |
 
-**无需用户填写任何接口信息**，安装打开即可使用 AI 功能（默认已开启）。
-设置页仅保留「启用 AI 功能」开关与「测试 AI 接口」按钮，不再暴露配置项。
+换服务商只改 `OPENAI_BASE_URL` + `LLM_MODEL` 两行（通义 / 智谱 / Moonshot / OpenAI / Ollama 均兼容）。
+`server/.env` 已被 `.gitignore` 忽略，不会提交到仓库。
 
-> ⚠️ 注意：内置 Key 会出现在前端产物里，公网部署的任何人都可提取并盗刷。
-> 若上线公开使用，建议：① 在 DeepSeek 后台给该 Key 设置余额上限/定期轮换；
-> ② 或改为自建后端代理转发（前端只带自己的 token）。
+### 6.2 后端服务
 
-如需切换到自己的服务：直接修改 `aiConfig.js` 里的 `BUILTIN_AI` 三个字段即可（用户设置留空时一律回落内置值）。
+`server/index.js` —— **零第三方依赖**（仅用 Node 原生 `http` / `https` 模块）：
+
+- 静态托管 `public/` 下的 H5 产物（含 SPA history 回退）
+- `POST /api/ai/chat`：校验 messages → 服务端注入 `Authorization` → 转发上游 → 透传响应
+- `GET /api/ai/health`：返回服务商与模型名，便于排查
+- ⚠️ 只接受 `messages` / `temperature`，**不接受前端传 `base_url` / `api_key` / `model`**，防止被当成开放代理
+
+```bash
+npm install      # 安装前端依赖
+npm run build    # 构建 H5 并同步到 public/
+npm start        # 启动后端服务（默认 :8000）
+```
+
+### 6.3 前端接入
+
+`src/common/aiConfig.js` 按平台选择后端地址：H5 用同源相对路径 `''`，App / 小程序指向线上后端域名。
+设置页仅保留「启用 AI 功能」开关与「测试 AI 接口」按钮，不暴露任何密钥字段。
+
+> 小程序端需在 mp 后台「开发 → 开发设置 → 服务器域名」中，把后端域名加入 **request 合法域名**。
+
 支持的能力：AI 一键格式化导入文本、AI 给题目生成解析、AI 主观题语义判分、AI 图片 OCR 识题、批量补全解析、AI 答疑 Agent。
+所有调用均带 JSON 容错修复与失败回退，**网络/密钥异常不会让刷题中断**；关闭「启用 AI 功能」后自动回退到本地规则。
 所有调用均带 JSON 容错修复与失败回退，**网络/密钥异常不会让刷题中断**；关闭「启用 AI 功能」后自动回退到本地规则。
 
 ### 6.1 AI 答疑 Agent（底部导航「AI答疑」）

@@ -4,7 +4,6 @@
  */
 
 import { isCloudAvailable, syncUp, syncDown } from './cloud.js'
-import { BUILTIN_AI } from './aiConfig.js'
 
 const Storage = (function () {
   const DB_KEY = 'quiz_master_db'
@@ -40,9 +39,6 @@ const Storage = (function () {
         autoError: true,
         showExplanation: true,
         aiEnabled: true,
-        aiBaseUrl: 'https://api.deepseek.com',
-        aiApiKey: 'sk-b9722d361a284ced9e04b3e1db48ef3e',
-        aiModel: 'deepseek-flash',
         aiUseForImport: true,
         aiUseForExplanation: true,
         aiAutoExplainAfterImport: false,
@@ -736,13 +732,8 @@ const Storage = (function () {
 
   function getSettings() {
     const settings = { ...db.settings }
-    // 未填写 API Key 时自动回落到内置 AI 服务，保证打开即可使用
-    if (!settings.aiApiKey || !settings.aiApiKey.trim()) {
-      settings.aiEnabled = true
-      settings.aiBaseUrl = BUILTIN_AI.baseUrl
-      settings.aiApiKey = BUILTIN_AI.apiKey
-      settings.aiModel = BUILTIN_AI.model
-    }
+    // AI 密钥由服务端统一配置，前端只保留开关；未显式设置时默认开启
+    if (typeof settings.aiEnabled !== 'boolean') settings.aiEnabled = true
     return settings
   }
 
