@@ -30,7 +30,7 @@
 | 数据持久化 | `uni.getStorageSync/setStorageSync` 单库存储；`normalizeDB` 系列做读写两侧结构校验与脏数据兜底 |
 | 文件解析 | 按需懒加载 **mammoth**（docx）/ **SheetJS**（xlsx）/ **pdf.js**（pdf），自研 `parser.js` 题型识别 |
 | 云端与账号 | **WorkBuddy Cloud Service SDK**：邮箱验证码注册登录、密码登录、忘记密码；整库 JSON 同步（syncUp/syncDown） |
-| AI | OpenAI 兼容接口封装（`ai.js`）+ 自研答疑 Agent（`aiAgent.js`，多模态 + 多轮上下文） |
+| AI | 内置 **DeepSeek（deepseek-flash）** OpenAI 兼容接口封装（`ai.js` + `aiConfig.js`）+ 自研答疑 Agent（`aiAgent.js`，文本/图片/文档 + 多轮上下文），开箱即用 |
 | 工程化 | npm 分平台脚本、Git/GitHub、H5 静态部署、小程序 `packOptions.ignore` 包体积治理（251KB） |
 
 **源码规模**：约 5.2k 行（单页 SPA：`pages/index/index.vue` + 组件 + `common/` 逻辑层，逻辑与 UI 解耦）。
@@ -137,16 +137,28 @@ npm run build:mp-weixin # 产物：dist/build/mp-weixin/ → 微信开发者工�
 
 ---
 
-## 6. AI 功能配置
+## 6. AI 功能
 
-设置页提供 AI（OpenAI 兼容接口）配置：
-- **Base URL**：如 `https://api.openai.com/v1` 或自建/中转地址
-- **API Key**：你的密钥
-- **Model**：如 `gpt-4o-mini`
-- **启用开关**：关闭后所有 AI 功能（解析生成、主观题判分、OCR、批量补解析）自动回退到本地规则
+### 内置 AI 服务（开箱即用）
 
-支持的能力：AI 一键格式化导入文本、AI 给题目生成解析、AI 主观题语义判分、AI 图片 OCR 识题、批量补全解析。
-所有调用均带 JSON 容错修复与失败回退，**网络/密钥异常不会让刷题中断**。
+应用已内置一套 OpenAI 兼容的 AI 服务，配置在 `src/common/aiConfig.js`：
+
+| 项 | 值 |
+|---|---|
+| Base URL | `https://api.deepseek.com` |
+| Model | `deepseek-flash`（DeepSeek-V4.1-Flash，支持文本 + 图片输入，上下文 1M） |
+| API Key | 内置于 `aiConfig.js` |
+
+**无需用户填写任何接口信息**，安装打开即可使用 AI 功能（默认已开启）。
+设置页仅保留「启用 AI 功能」开关与「测试 AI 接口」按钮，不再暴露配置项。
+
+> ⚠️ 注意：内置 Key 会出现在前端产物里，公网部署的任何人都可提取并盗刷。
+> 若上线公开使用，建议：① 在 DeepSeek 后台给该 Key 设置余额上限/定期轮换；
+> ② 或改为自建后端代理转发（前端只带自己的 token）。
+
+如需切换到自己的服务：直接修改 `aiConfig.js` 里的 `BUILTIN_AI` 三个字段即可（用户设置留空时一律回落内置值）。
+支持的能力：AI 一键格式化导入文本、AI 给题目生成解析、AI 主观题语义判分、AI 图片 OCR 识题、批量补全解析、AI 答疑 Agent。
+所有调用均带 JSON 容错修复与失败回退，**网络/密钥异常不会让刷题中断**；关闭「启用 AI 功能」后自动回退到本地规则。
 
 ### 6.1 AI 答疑 Agent（底部导航「AI答疑」）
 
@@ -154,8 +166,8 @@ npm run build:mp-weixin # 产物：dist/build/mp-weixin/ → 微信开发者工�
 
 | 方式 | 说明 | 要求 |
 |---|---|---|
-| 文字提问 | 直接问「这道题为什么选 B」 | 任意文本模型 |
-| 图片提问 | 拍照/截图识题，走 `image_url` 多模态，一次最多 3 张 | **必须填支持视觉的模型**（如 `gpt-4o-mini` / `gpt-4o`） |
+| 文字提问 | 直接问「这道题为什么选 B」 | 内置模型直接可用 |
+| 图片提问 | 拍照/截图识题，走 `image_url` 多模态，一次最多 3 张 | 内置 `deepseek-flash` 支持图片输入 ✅ |
 | 文档提问 | 上传 txt/csv/docx/xlsx/pdf，先解析成文本再作为上下文作答 | H5 / App 全格式；小程序端仅 txt/csv |
 
 - 内置「答疑老师」系统提示词：先给结论 → 再给推导步骤 → 最后补易错点，题目类必给「答案 + 解析」
@@ -227,7 +239,7 @@ quiz-master-uniapp/
 1. 首次打开为空题库，会自动注入 **示例题库**，可直接体验背题/刷题。
 2. 想快速试全功能 → 跑 **H5**（`npm run dev:h5`），文档解析与 OCR 开箱即用。
 3. 想在手机上用 → 跑 **App** 真机；想发到微信 → 跑 **小程序**（注意第 5.1 节文档限制，或用 AI OCR 绕开）。
-4. AI 功能先在「设置」里填好 Base URL / Key / Model，点「测试连接」验证后再用。
+4. AI 功能已内置并默认开启，可直接在「设置」点「测试 AI 接口」验证连通性后使用（详见第 6 节）。
 
 ---
 

@@ -1,5 +1,6 @@
 // ai.js - AI 调用层（OpenAI 兼容接口），fetch 改为 uni.request 以跨端运行
 import Storage from './storage.js'
+import { resolveAiConfig } from './aiConfig.js'
 
 const AiService = (function () {
   function getSettings() {
@@ -8,12 +9,12 @@ const AiService = (function () {
 
   function isConfigured() {
     const settings = getSettings()
-    return !!(settings.aiEnabled && settings.aiApiKey && settings.aiBaseUrl && settings.aiModel)
+    const cfg = resolveAiConfig(settings)
+    return !!(settings.aiEnabled && cfg.apiKey && cfg.baseUrl && cfg.model)
   }
 
   function getEndpoint() {
-    const settings = getSettings()
-    return settings.aiBaseUrl.replace(/\/$/, '') + '/chat/completions'
+    return resolveAiConfig(getSettings()).baseUrl.replace(/\/$/, '') + '/chat/completions'
   }
 
   function uniRequest(options) {
@@ -33,12 +34,12 @@ const AiService = (function () {
   async function chat(messages, options) {
     const settings = getSettings()
     if (!settings.aiEnabled) throw new Error('请先在设置中开启 AI 功能')
-    if (!settings.aiApiKey) throw new Error('请先在设置中填写 AI API Key')
-    if (!settings.aiBaseUrl) throw new Error('请先在设置中填写 AI Base URL')
-    if (!settings.aiModel) throw new Error('请先在设置中填写 AI 模型')
+
+    // 未填写的配置自动使用内置服务，保证打开即用
+    const cfg = resolveAiConfig(settings)
 
     const body = {
-      model: settings.aiModel,
+      model: cfg.model,
       temperature: options && typeof options.temperature === 'number' ? options.temperature : 0.2,
       messages
     }
@@ -50,13 +51,13 @@ const AiService = (function () {
         method: 'POST',
         header: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + settings.aiApiKey
+          Authorization: 'Bearer ' + cfg.apiKey
         },
         data: body
       })
     } catch (error) {
       const reason = error && error.errMsg ? error.errMsg : '网络请求失败'
-      throw new Error('AI 网络请求失败，请检查 Base URL、API Key、当前网络，或重新编译安卓应用后再试：' + reason)
+      throw new Error('AI 网络请求失败，请检查当前网络、AI 接口额度，或重新编译安卓应用后再试：' + reason)
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -331,8 +332,10 @@ const AiService = (function () {
     ].join('\n')
 
     const settings = getSettings()
+    if (!settings.aiEnabled) throw new Error('请先在设置中开启 AI 功能')
+    const cfg = resolveAiConfig(settings)
     const body = {
-      model: settings.aiModel,
+      model: cfg.model,
       temperature: 0.1,
       messages: [
         { role: 'system', content: '你是 OCR 题库识别助手。' },
@@ -353,7 +356,7 @@ const AiService = (function () {
         method: 'POST',
         header: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + settings.aiApiKey
+          Authorization: 'Bearer ' + cfg.apiKey
         },
         data: body
       })

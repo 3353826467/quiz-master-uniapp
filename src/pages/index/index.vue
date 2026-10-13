@@ -480,10 +480,8 @@
         </view>
         <view class="settings-group">
           <view class="settings-group-title">AI 设置</view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">启用 AI 功能</span><span class="settings-item-desc">用于题目识别排版、AI 解析和补全</span></view><label class="switch"><input type="checkbox" v-model="settings.aiEnabled" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="form-group"><label class="form-label">AI Base URL</label><input type="text" v-model="settings.aiBaseUrl" class="form-input" placeholder="例如：https://api.openai.com/v1" @blur="saveSettings"></view>
-          <view class="form-group"><label class="form-label">AI API Key</label><input type="text" v-model="settings.aiApiKey" class="form-input" placeholder="输入你的 API Key" @blur="saveSettings"></view>
-          <view class="form-group"><label class="form-label">AI 模型</label><input type="text" v-model="settings.aiModel" class="form-input" placeholder="例如：gpt-4o-mini" @blur="saveSettings"></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">启用 AI 功能</span><span class="settings-item-desc">用于题目识别排版、AI 解析、AI 答疑</span></view><label class="switch"><input type="checkbox" v-model="settings.aiEnabled" @change="saveSettings"><span class="switch-slider"></span></label></view>
+          <view class="form-hint" style="margin:0 0 14px;">已内置 AI 模型（DeepSeek · deepseek-flash，支持文字与图片），无需配置，开启后即可使用。</view>
           <view style="display:flex;gap:10px;margin-bottom:14px;"><button class="btn-secondary" style="flex:1;" @click="testAiConnection()">测试 AI 接口</button></view>
           <view class="form-hint" style="margin-bottom:12px;">{{ aiTestResult }}</view>
           <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">导入时优先用 AI</span><span class="settings-item-desc">先用 AI 识别题目结构与排版，再导入</span></view><label class="switch"><input type="checkbox" v-model="settings.aiUseForImport" @change="saveSettings"><span class="switch-slider"></span></label></view>
@@ -715,10 +713,10 @@ const settings = reactive({
   optionShuffle: false,
   autoError: true,
   showExplanation: true,
-  aiEnabled: false,
-  aiBaseUrl: 'https://api.openai.com/v1',
-  aiApiKey: '',
-  aiModel: 'gpt-4o-mini',
+  aiEnabled: true,
+  aiBaseUrl: 'https://api.deepseek.com',
+  aiApiKey: 'sk-b9722d361a284ced9e04b3e1db48ef3e',
+  aiModel: 'deepseek-flash',
   aiUseForImport: true,
   aiUseForExplanation: true,
   aiAutoExplainAfterImport: false,

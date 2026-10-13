@@ -8,7 +8,7 @@
 
     <!-- 未配置 AI 提示 -->
     <view v-if="!configured" class="ai-tip">
-      请先在「设置」中开启 AI 功能，并填写 Base URL / API Key / 模型后再使用答疑。
+      请先在「设置」中开启 AI 功能后再使用答疑（模型已内置，无需配置）。
     </view>
 
     <!-- 附件区 -->
@@ -114,7 +114,7 @@ onMounted(refresh)
 
 // ==================== 附件 ====================
 async function pickImage() {
-  if (!configured.value) return toast('请先在设置中开启并配置 AI')
+  if (!configured.value) return toast('请先在设置中开启 AI 功能')
   try {
     const res = await uni.chooseImage({ count: 3, sourceType: ['album', 'camera'] })
     const list = res.tempFiles && res.tempFiles.length ? res.tempFiles : (res.tempFilePaths || []).map((p) => ({ path: p }))
@@ -133,7 +133,7 @@ async function pickImage() {
 }
 
 async function pickDoc() {
-  if (!configured.value) return toast('请先在设置中开启并配置 AI')
+  if (!configured.value) return toast('请先在设置中开启 AI 功能')
   try {
     const file = await chooseDocument()
     toast('正在解析文档…')
@@ -152,7 +152,7 @@ function removeAttachment(index) {
 
 // ==================== 提问 ====================
 async function send() {
-  if (!configured.value) return toast('请先在设置中开启并配置 AI')
+  if (!configured.value) return toast('请先在设置中开启 AI 功能')
   if (!canSend.value) return toast('请输入问题或上传图片 / 文档')
 
   const images = attachments.value.filter((a) => a.type === 'image')
