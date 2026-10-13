@@ -8,7 +8,7 @@
  *      前端产物中不含任何密钥
  *
  * 密钥配置：复制 server/.env.example 为 server/.env 后按需修改。
- * 启动：PORT=8000 node server/index.js
+ * 启动：node server/index.js（默认监听 3000，可用 PORT 环境变量覆盖）
  */
 'use strict'
 
@@ -55,7 +55,8 @@ function env(key, fallback) {
 
 const CONFIG = {
   host: env('HOST', '0.0.0.0'),
-  port: Number(env('PORT', 8000)),
+  // 默认 3000：部署平台普遍以 3000 作为探测端口（平台注入的 PORT 环境变量优先）
+  port: Number(env('PORT', 3000)),
   maxBodyBytes: Number(env('MAX_BODY_BYTES', 20 * 1024 * 1024)),
   ai: {
     baseUrl: env('OPENAI_BASE_URL', 'https://api.deepseek.com').replace(/\/$/, ''),
