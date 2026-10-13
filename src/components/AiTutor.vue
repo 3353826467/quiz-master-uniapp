@@ -291,6 +291,7 @@ function copyAnswer() {
 }
 .ai-act-btn {
   flex: none;
+  width: auto;
   min-width: 150rpx;
   margin-right: 16rpx;
   padding: 0 24rpx;
