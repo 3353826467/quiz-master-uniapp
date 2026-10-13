@@ -2124,26 +2124,53 @@ page {
   }
 
   .content {
-    max-width: 600px;
+    max-width: 720px;
     margin: 0 auto;
     width: 100%;
   }
 
   .app-header {
-    max-width: 600px;
+    max-width: 720px;
     margin: 0 auto;
     width: 100%;
   }
 
   .bottom-nav {
-    max-width: 600px;
+    max-width: 720px;
     margin: 0 auto;
     left: 50%;
     transform: translateX(-50%);
   }
 
   .fab {
-    right: calc(50% - 300px + 20px);
+    right: calc(50% - 360px + 20px);
+  }
+}
+
+/* 桌面端：容器加宽，题库列表自动多列 */
+@media (min-width: 1024px) {
+  .content {
+    max-width: 1100px;
+    padding: 20px 24px;
+    padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 20px);
+  }
+
+  .app-header {
+    max-width: 1100px;
+  }
+
+  .bottom-nav {
+    max-width: 1100px;
+  }
+
+  .fab {
+    right: calc(50% - 550px + 28px);
+  }
+
+  .bank-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
   }
 }
 
