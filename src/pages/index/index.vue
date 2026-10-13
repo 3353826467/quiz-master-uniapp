@@ -472,23 +472,23 @@
       <view class="content">
         <view class="settings-group">
           <view class="settings-group-title">学习设置</view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">背题乱序</span><span class="settings-item-desc">背题时随机打乱题目顺序</span></view><label class="switch"><input type="checkbox" v-model="settings.studyShuffle" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">刷题乱序</span><span class="settings-item-desc">刷题时随机打乱题目顺序</span></view><label class="switch"><input type="checkbox" v-model="settings.practiceShuffle" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">选项乱序</span><span class="settings-item-desc">刷题时随机打乱选项顺序</span></view><label class="switch"><input type="checkbox" v-model="settings.optionShuffle" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">自动加入错题本</span><span class="settings-item-desc">答错时自动添加到错题本</span></view><label class="switch"><input type="checkbox" v-model="settings.autoError" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">显示解析</span><span class="settings-item-desc">刷题时显示答案解析</span></view><label class="switch"><input type="checkbox" v-model="settings.showExplanation" @change="saveSettings"><span class="switch-slider"></span></label></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">背题乱序</span><span class="settings-item-desc">背题时随机打乱题目顺序</span></view><view class="switch" :class="{ on: settings.studyShuffle }" @click="toggleSetting('studyShuffle')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">刷题乱序</span><span class="settings-item-desc">刷题时随机打乱题目顺序</span></view><view class="switch" :class="{ on: settings.practiceShuffle }" @click="toggleSetting('practiceShuffle')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">选项乱序</span><span class="settings-item-desc">刷题时随机打乱选项顺序</span></view><view class="switch" :class="{ on: settings.optionShuffle }" @click="toggleSetting('optionShuffle')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">自动加入错题本</span><span class="settings-item-desc">答错时自动添加到错题本</span></view><view class="switch" :class="{ on: settings.autoError }" @click="toggleSetting('autoError')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">显示解析</span><span class="settings-item-desc">刷题时显示答案解析</span></view><view class="switch" :class="{ on: settings.showExplanation }" @click="toggleSetting('showExplanation')"><view class="switch-slider"></view></view></view>
         </view>
         <view class="settings-group">
           <view class="settings-group-title">AI 设置</view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">启用 AI 功能</span><span class="settings-item-desc">用于题目识别排版、AI 解析、AI 答疑</span></view><label class="switch"><input type="checkbox" v-model="settings.aiEnabled" @change="saveSettings"><span class="switch-slider"></span></label></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">启用 AI 功能</span><span class="settings-item-desc">用于题目识别排版、AI 解析、AI 答疑</span></view><view class="switch" :class="{ on: settings.aiEnabled }" @click="toggleSetting('aiEnabled')"><view class="switch-slider"></view></view></view>
           <view class="form-hint" style="margin:0 0 14px;">已内置 AI 模型（DeepSeek · deepseek-flash，支持文字与图片），无需配置，开启后即可使用。</view>
           <view style="display:flex;gap:10px;margin-bottom:14px;"><button class="btn-secondary" style="flex:1;" @click="testAiConnection()">测试 AI 接口</button></view>
           <view class="form-hint" style="margin-bottom:12px;">{{ aiTestResult }}</view>
-          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">导入时优先用 AI</span><span class="settings-item-desc">先用 AI 识别题目结构与排版，再导入</span></view><label class="switch"><input type="checkbox" v-model="settings.aiUseForImport" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">允许 AI 生成解析</span><span class="settings-item-desc">题目无解析时可自动补全解析</span></div><label class="switch"><input type="checkbox" v-model="settings.aiUseForExplanation" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">导入后批量补全解析</span><span class="settings-item-desc">导入成功后自动为无解析题补齐 AI 解析</span></div><label class="switch"><input type="checkbox" v-model="settings.aiAutoExplainAfterImport" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">主观题 AI 判分</span><span class="settings-item-desc">填空题/简答题启用语义判分</span></div><label class="switch"><input type="checkbox" v-model="settings.aiUseForSubjectiveGrading" @change="saveSettings"><span class="switch-slider"></span></label></view>
-          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">AI 失败自动回退</span><span class="settings-item-desc">AI 出错时回退到普通解析</span></div><label class="switch"><input type="checkbox" v-model="settings.aiAutoFallback" @change="saveSettings"><span class="switch-slider"></span></label></view>
+          <view class="settings-item"><view class="settings-item-info"><span class="settings-item-label">导入时优先用 AI</span><span class="settings-item-desc">先用 AI 识别题目结构与排版，再导入</span></view><view class="switch" :class="{ on: settings.aiUseForImport }" @click="toggleSetting('aiUseForImport')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">允许 AI 生成解析</span><span class="settings-item-desc">题目无解析时可自动补全解析</span></div><view class="switch" :class="{ on: settings.aiUseForExplanation }" @click="toggleSetting('aiUseForExplanation')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">导入后批量补全解析</span><span class="settings-item-desc">导入成功后自动为无解析题补齐 AI 解析</span></div><view class="switch" :class="{ on: settings.aiAutoExplainAfterImport }" @click="toggleSetting('aiAutoExplainAfterImport')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">主观题 AI 判分</span><span class="settings-item-desc">填空题/简答题启用语义判分</span></div><view class="switch" :class="{ on: settings.aiUseForSubjectiveGrading }" @click="toggleSetting('aiUseForSubjectiveGrading')"><view class="switch-slider"></view></view></view>
+          <view class="settings-item"><div class="settings-item-info"><span class="settings-item-label">AI 失败自动回退</span><span class="settings-item-desc">AI 出错时回退到普通解析</span></div><view class="switch" :class="{ on: settings.aiAutoFallback }" @click="toggleSetting('aiAutoFallback')"><view class="switch-slider"></view></view></view>
         </view>
         <view class="settings-group">
           <view class="settings-group-title">数据管理</view>
@@ -1888,6 +1888,15 @@ function saveSettings() {
     aiUseForSubjectiveGrading: settings.aiUseForSubjectiveGrading,
     aiAutoFallback: settings.aiAutoFallback
   })
+}
+
+/**
+ * 开关切换：settings 是 reactive 对象，直接改键再落盘。
+ * 不依赖原生 checkbox 的 change 事件（uni-app 的 label→input 转发对原生 input 无效）。
+ */
+function toggleSetting(key) {
+  settings[key] = !settings[key]
+  saveSettings()
 }
 
 async function testAiConnection() {

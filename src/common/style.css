@@ -1608,19 +1608,18 @@ page {
   margin-top: 2px;
 }
 
-/* Switch */
+/* Switch
+   注意：不能再用 <label> + 原生 <input type=checkbox> —— uni-app 会把 label 编译成
+   自定义元素 uni-label，其点击转发只对 uni 内置组件（checkbox/radio/switch/button）
+   生效，原生 input 收不到点击，H5 端开关会完全点不动。
+   现改为 view + Vue 状态驱动（.on 类），三端一致。 */
 .switch {
   position: relative;
   display: inline-block;
   width: 48px;
   height: 28px;
   flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+  cursor: pointer;
 }
 
 .switch-slider {
@@ -1648,11 +1647,11 @@ page {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.switch input:checked + .switch-slider {
+.switch.on .switch-slider {
   background: var(--primary);
 }
 
-.switch input:checked + .switch-slider::before {
+.switch.on .switch-slider::before {
   transform: translateX(20px);
 }
 
