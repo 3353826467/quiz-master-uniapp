@@ -546,6 +546,8 @@ page {
 
 .form-input {
   width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 14px;
@@ -1132,6 +1134,8 @@ page {
 
 .practice-input {
   width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
   border: 2px solid var(--border);
   border-radius: var(--radius);
   padding: 14px;
@@ -1849,6 +1853,8 @@ page {
 
 .modal-input {
   width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 14px;
