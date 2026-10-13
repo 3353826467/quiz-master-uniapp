@@ -8,6 +8,9 @@ unpackage/
 # 服务端密钥（AI API Key 只保存在服务端 .env，不进前端产物）
 server/.env
 
+# 部署目录（内含 public/ 构建产物与 server/.env，不入库）
+deploy/
+
 # HBuilderX
 .hbuilderx/
 

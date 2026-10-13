@@ -144,16 +144,20 @@ API Key 只保存在服务端 `server/.env`，前端产物 `public/` 中不含�
 
 ### 6.1 服务端配置
 
-配置文件：`server/.env`（复制 `server/.env.example` 即可开箱使用）
+配置文件：`server/.env`（由 `server/.env.example` 复制而来）
 
-| 变量 | 默认值 |
+| 变量 | 说明 |
 |---|---|
-| `OPENAI_BASE_URL` | `https://api.deepseek.com` |
-| `OPENAI_API_KEY` | 内置 DeepSeek Key |
-| `LLM_MODEL` | `deepseek-flash`（支持文本 + 图片，上下文 1M） |
+| `OPENAI_BASE_URL` | 默认 `https://api.deepseek.com` |
+| `OPENAI_API_KEY` | **你的密钥**（`.env.example` 中为占位符，需自行填写） |
+| `LLM_MODEL` | 默认 `deepseek-flash`（支持文本 + 图片，上下文 1M） |
 | `LLM_MAX_TOKENS` | `4096`（推理模型会额外消耗 reasoning tokens） |
 | `LLM_TIMEOUT` | `90` 秒 |
 | `PORT` | `8000` |
+
+```bash
+cp server/.env.example server/.env   # 然后填入你的 Key
+```
 
 换服务商只改 `OPENAI_BASE_URL` + `LLM_MODEL` 两行（通义 / 智谱 / Moonshot / OpenAI / Ollama 均兼容）。
 `server/.env` 已被 `.gitignore` 忽略，不会提交到仓库。
@@ -179,6 +183,20 @@ npm start        # 启动后端服务（默认 :8000）
 设置页仅保留「启用 AI 功能」开关与「测试 AI 接口」按钮，不暴露任何密钥字段。
 
 > 小程序端需在 mp 后台「开发 → 开发设置 → 服务器域名」中，把后端域名加入 **request 合法域名**。
+
+### 6.4 线上部署
+
+部署需要一个能跑 Node 服务的环境（不再是纯静态托管）。`deploy/` 是打包好的部署目录：
+
+```bash
+mkdir -p deploy/server && cp server/index.js deploy/server/
+cp server/.env deploy/server/.env
+cp -r public deploy/public
+# deploy/package.json 声明 start: node server/index.js（零依赖，无需 npm install）
+```
+
+线上地址：https://quizmaster-h5.app.workbuddy.host/ （同一端口同时提供静态页面与 `/api/ai/*`）
+`deploy/` 含构建产物与含密钥的 `.env`，已加入 `.gitignore`，不入库。
 
 支持的能力：AI 一键格式化导入文本、AI 给题目生成解析、AI 主观题语义判分、AI 图片 OCR 识题、批量补全解析、AI 答疑 Agent。
 所有调用均带 JSON 容错修复与失败回退，**网络/密钥异常不会让刷题中断**；关闭「启用 AI 功能」后自动回退到本地规则。
